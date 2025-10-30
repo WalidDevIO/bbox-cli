@@ -1,0 +1,6 @@
+.env*
+bbox-cli
+.vscode/
+.idea/
+*.log
+*.exe
