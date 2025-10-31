@@ -36,6 +36,7 @@ func (bc *BboxClient) GetCookies() []*http.Cookie {
 }
 
 func (bc *BboxClient) Do(req *http.Request) (*http.Response, error) {
+	req.URL = bc.Url.JoinPath(req.URL.String())
 	return bc.Client.Do(req)
 }
 

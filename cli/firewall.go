@@ -25,6 +25,14 @@ func handleFirewall(client *bboxclient.BboxClient, args []string) {
 			// Show list view
 			showFirewallList(client)
 		}
+	case "add":
+		panic("Add firewall rule not implemented yet")
+	case "delete":
+		if len(args) < 2 {
+			fmt.Println("firewall usage: bboxcli firewall delete <id>")
+			return
+		}
+		deleteFirewallRule(client, args[1])
 	default:
 		fmt.Printf("Unknown firewall action: %s\n", action)
 		fmt.Println("firewall usage: bboxcli firewall <show> [id]")
@@ -121,4 +129,14 @@ func showFirewallDetail(client *bboxclient.BboxClient, idStr string) {
 	fmt.Printf("Dest Ports:     %s\n", defaultIfEmpty(rule.DstPorts.String(), "ANY"))
 	fmt.Printf("Protocols:      %s\n", defaultIfEmpty(string(rule.Protocols), "ANY"))
 	fmt.Println(repeatString("=", 50))
+}
+
+func deleteFirewallRule(client *bboxclient.BboxClient, ruleID string) {
+	fw := client.Firewall()
+	err := fw.DeleteFirewallRule(ruleID)
+	if err != nil {
+		log.Fatalf("Error deleting firewall rule: %v", err)
+	}
+
+	fmt.Printf("Firewall rule with ID %s deleted successfully\n", ruleID)
 }

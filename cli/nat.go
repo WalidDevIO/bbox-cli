@@ -13,24 +13,36 @@ func handleNat(client *bboxclient.BboxClient, args []string) {
 		return
 	}
 
+	nat := client.Nat()
 	action := args[0]
 
 	switch action {
 	case "show":
 		if len(args) > 1 {
-			panic("Detailed view not implemented yet")
+			showNatDetail(nat, args[1])
 		} else {
 			// Show list view
-			showNatList(client)
+			showNatList(nat)
 		}
+	case "enable":
+		if len(args) < 2 {
+			fmt.Println("nat usage: bboxcli nat enable <id>")
+			return
+		}
+		nat.EnableNatRule(args[1])
+	case "disable":
+		if len(args) < 2 {
+			fmt.Println("nat usage: bboxcli nat disable <id>")
+			return
+		}
+		nat.DisableNatRule(args[1])
 	default:
 		fmt.Printf("Unknown nat action: %s\n", action)
 		fmt.Println("nat usage: bboxcli nat <show> [id]")
 	}
 }
 
-func showNatList(client *bboxclient.BboxClient) {
-	nat := client.Nat()
+func showNatList(nat *bboxclient.NatInterface) {
 	rules, err := nat.GetNatRules()
 	if err != nil {
 		log.Fatalf("Error: %v", err)
@@ -70,4 +82,32 @@ func showNatList(client *bboxclient.BboxClient) {
 			srcPorts,
 		)
 	}
+}
+
+func showNatDetail(nat *bboxclient.NatInterface, id string) {
+	rules, err := nat.GetNatRules()
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	var ruleFound *bboxclient.NatRule
+	for _, rule := range rules {
+		if fmt.Sprintf("%d", rule.ID) == id {
+			ruleFound = &rule
+			break
+		}
+	}
+
+	if ruleFound == nil {
+		fmt.Printf("NAT rule with ID %s not found\n", id)
+		return
+	}
+
+	fmt.Printf("NAT Rule ID: %d\n", ruleFound.ID)
+	fmt.Printf("Description: %s\n", ruleFound.Description)
+	fmt.Printf("Enabled: %t\n", ruleFound.Enable == bboxclient.Enabled)
+	fmt.Printf("Source IP: %s\n", ruleFound.SrcIP.String())
+	fmt.Printf("Source Ports: %s\n", ruleFound.SrcPorts.String())
+	fmt.Printf("Target IP: %s\n", ruleFound.TargetIP.String())
+	fmt.Printf("Target Ports: %s\n", ruleFound.TargetPorts.String())
 }

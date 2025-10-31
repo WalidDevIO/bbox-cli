@@ -2,6 +2,10 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 )
 
 type NatInterface struct {
@@ -54,4 +58,24 @@ func (ni *NatInterface) GetNatRuleByID(ruleID int) (NatRule, error) {
 		return result, err
 	}
 	return result, nil
+}
+
+func (ni *NatInterface) changeNatRuleState(ruleID string, enable EnableState) error {
+	path := "/nat/rules/" + ruleID
+	data := fmt.Sprintf("enable=%d", enable)
+	req, err := http.NewRequest("PUT", path, io.Reader(strings.NewReader(data)))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	_, err = ni.Client.Do(req)
+	return err
+}
+
+func (ni *NatInterface) EnableNatRule(ruleID string) error {
+	return ni.changeNatRuleState(ruleID, Enabled)
+}
+
+func (ni *NatInterface) DisableNatRule(ruleID string) error {
+	return ni.changeNatRuleState(ruleID, Disabled)
 }
