@@ -47,6 +47,10 @@ func (bc *BboxClient) Post(url, contentType string, body io.Reader) (*http.Respo
 	return bc.Client.Post(bc.Url.String()+url, contentType, body)
 }
 
+func (bc *BboxClient) Nat() *NatInterface {
+	return &NatInterface{Client: bc}
+}
+
 func (bc *BboxClient) Firewall() *FirewallInterface {
 	return &FirewallInterface{Client: bc}
 }

@@ -1,6 +1,6 @@
 module bbox-cli
 
-go 1.15
+go 1.20
 
 require (
 	github.com/google/uuid v1.6.0

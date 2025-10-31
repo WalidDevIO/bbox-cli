@@ -51,6 +51,8 @@ func Run() {
 	subcommand := os.Args[1]
 
 	switch subcommand {
+	case "nat":
+		handleNat(client, os.Args[2:])
 	case "firewall":
 		handleFirewall(client, os.Args[2:])
 	case "help":
@@ -70,6 +72,8 @@ func printUsage() {
 	fmt.Println("Commands:")
 	fmt.Println("  firewall show       Show all firewall rules")
 	fmt.Println("  firewall show <id>  Show detailed firewall rule")
+	fmt.Println("  nat show            Show all NAT rules")
+	fmt.Println("  nat show <id>(WIP)  Show detailed NAT rule")
 	fmt.Println("  help                Show this help message")
 	fmt.Println()
 	fmt.Println("Environment variables:")
