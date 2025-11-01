@@ -100,9 +100,15 @@ type NatRule struct {
 	ID          int         `json:"id"`
 	Enable      EnableState `json:"enable"`
 	Description string      `json:"description"`
-	Protocol    Protocol    `json:"protocol"`
-	SrcIP       StringOrInt `json:"externalip"`
-	SrcPorts    StringOrInt `json:"externalport"`
+
+	// Protocol configuration
+	Protocol Protocol `json:"protocol"`
+
+	// Source configuration
+	SrcIP    StringOrInt `json:"externalip"`
+	SrcPorts StringOrInt `json:"externalport"`
+
+	// Target configuration
 	TargetIP    StringOrInt `json:"internalip"`
 	TargetPorts StringOrInt `json:"internalport"`
 }
