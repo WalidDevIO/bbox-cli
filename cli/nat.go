@@ -9,7 +9,7 @@ import (
 
 func handleNat(client *bboxclient.BboxClient, args []string) {
 	if len(args) < 1 {
-		fmt.Println("nat usage: bboxcli nat <show> [id]")
+		PrintUsage()
 		return
 	}
 
@@ -26,19 +26,19 @@ func handleNat(client *bboxclient.BboxClient, args []string) {
 		}
 	case "enable":
 		if len(args) < 2 {
-			fmt.Println("nat usage: bboxcli nat enable <id>")
+			PrintUsage()
 			return
 		}
 		nat.EnableNatRule(args[1])
 	case "disable":
 		if len(args) < 2 {
-			fmt.Println("nat usage: bboxcli nat disable <id>")
+			PrintUsage()
 			return
 		}
 		nat.DisableNatRule(args[1])
 	default:
 		fmt.Printf("Unknown nat action: %s\n", action)
-		fmt.Println("nat usage: bboxcli nat <show> [id]")
+		PrintUsage()
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 
 func handleFirewall(client *bboxclient.BboxClient, args []string) {
 	if len(args) < 1 {
-		fmt.Println("firewall usage: bboxcli firewall <show> [id]")
+		PrintUsage()
 		return
 	}
 
@@ -26,16 +26,17 @@ func handleFirewall(client *bboxclient.BboxClient, args []string) {
 			showFirewallList(client)
 		}
 	case "add":
-		panic("Add firewall rule not implemented yet")
+		rule := handleRuleCreation()
+		addFirewallRule(client, rule)
 	case "delete":
 		if len(args) < 2 {
-			fmt.Println("firewall usage: bboxcli firewall delete <id>")
+			PrintUsage()
 			return
 		}
 		deleteFirewallRule(client, args[1])
 	default:
 		fmt.Printf("Unknown firewall action: %s\n", action)
-		fmt.Println("firewall usage: bboxcli firewall <show> [id]")
+		PrintUsage()
 	}
 }
 
@@ -139,4 +140,33 @@ func deleteFirewallRule(client *bboxclient.BboxClient, ruleID string) {
 	}
 
 	fmt.Printf("Firewall rule with ID %s deleted successfully\n", ruleID)
+}
+
+func addFirewallRule(client *bboxclient.BboxClient, rule bboxclient.FirewallRule) {
+	fw := client.Firewall()
+	err := fw.AddFirewallRule(rule)
+	if err != nil {
+		log.Fatalf("Error adding firewall rule: %v", err)
+	}
+
+	fmt.Println("Firewall rule added successfully")
+}
+
+func handleRuleCreation() bboxclient.FirewallRule {
+	rule := bboxclient.FirewallRule{
+		IPProtocol: bboxclient.IPProtocolIPv4,
+		Order:      1,
+	}
+
+	fmt.Println("Creating a new firewall rule.")
+
+	rule.Description = bboxclient.GenerateUniqueDescription(readInput("Enter Description: "))
+	rule.Action = bboxclient.Action(readInput("Enter Action (Accept/Drop): "))
+	rule.SrcIP, rule.SrcIPNot = parseIPOrPort(readInput("Enter Source IP (or leave blank for ANY): "))
+	rule.SrcPorts, rule.SrcPortNot = parseIPOrPort(readInput("Enter Source Ports (or leave blank for ANY): "))
+	rule.DstIP, rule.DstIPNot = parseIPOrPort(readInput("Enter Destination IP (or leave blank for ANY): "))
+	rule.DstPorts, rule.DstPortNot = parseIPOrPort(readInput("Enter Destination Ports (or leave blank for ANY): "))
+	rule.Protocols = parseProtocols(readInput("Enter Protocols (tcp/udp or leave blank for ANY): "))
+	rule.Enable = parseEnable(readInput("Enable rule? (y/n): "))
+	return rule
 }

@@ -14,7 +14,7 @@ import (
 func Run() {
 	godotenv.Load()
 	if len(os.Args) < 2 {
-		printUsage()
+		PrintUsage()
 		os.Exit(1)
 	}
 
@@ -56,15 +56,15 @@ func Run() {
 	case "firewall":
 		handleFirewall(client, os.Args[2:])
 	case "help":
-		printUsage()
+		PrintUsage()
 	default:
 		fmt.Printf("Unknown command: %s\n", subcommand)
-		printUsage()
+		PrintUsage()
 		os.Exit(1)
 	}
 }
 
-func printUsage() {
+func PrintUsage() {
 	fmt.Println("bboxcli - Bbox Configuration Tool")
 	fmt.Println()
 	fmt.Println("Usage: bboxcli <command> [options]")

@@ -53,13 +53,13 @@ type FirewallRule struct {
 	Description string      `json:"description"`
 	Enable      EnableState `json:"enable"`
 	Action      Action      `json:"action"`
-	SrcIPNot    StringOrInt `json:"srcipnot"`
+	SrcIPNot    EnableState `json:"srcipnot"`
 	SrcIP       StringOrInt `json:"srcip"`
-	DstIPNot    StringOrInt `json:"dstipnot"`
+	DstIPNot    EnableState `json:"dstipnot"`
 	DstIP       StringOrInt `json:"dstip"`
-	SrcPortNot  StringOrInt `json:"srcportnot"`
+	SrcPortNot  EnableState `json:"srcportnot"`
 	SrcPorts    StringOrInt `json:"srcports"`
-	DstPortNot  StringOrInt `json:"dstportnot"`
+	DstPortNot  EnableState `json:"dstportnot"`
 	DstPorts    StringOrInt `json:"dstports"`
 	Order       int         `json:"order"`
 	Protocols   Protocol    `json:"protocols"`
@@ -124,23 +124,7 @@ func (fi *FirewallInterface) AddFirewallRule(rule FirewallRule) error {
 	}
 
 	url := fmt.Sprintf("/firewall/rules?btoken=%s", fi.Client.Bearer.Token)
-	data := fmt.Sprintf(
-		"enable=%d&action=%s&srcipnot=%v&srcip=%v&dstipnot=%v&dstip=%v&srcportnot=%v&srcports=%v&dstportnot=%v&dstports=%v&order=%d&protocols=%v&ipprotocol=%v&description=%v",
-		rule.Enable,
-		rule.Action,
-		rule.SrcIPNot,
-		rule.SrcIP,
-		rule.DstIPNot,
-		rule.DstIP,
-		rule.SrcPortNot,
-		rule.SrcPorts,
-		rule.DstPortNot,
-		rule.DstPorts,
-		rule.Order,
-		rule.Protocols,
-		rule.IPProtocol,
-		rule.Description,
-	)
+	data := rule.RuleAsString()
 
 	resp, err := fi.Client.Post(
 		url, "application/x-www-form-urlencoded", io.Reader(strings.NewReader(data)),
@@ -176,23 +160,7 @@ func (fi *FirewallInterface) UpdateFirewallRule(rule FirewallRule) error {
 	}
 
 	url := fmt.Sprintf("/firewall/rules/%s?btoken=%s", ruleID, fi.Client.Bearer.Token)
-	data := fmt.Sprintf(
-		"enable=%d&action=%s&srcipnot=%v&srcip=%v&dstipnot=%v&dstip=%v&srcportnot=%v&srcports=%v&dstportnot=%v&dstports=%v&order=%d&protocols=%v&ipprotocol=%v&description=%v",
-		rule.Enable,
-		rule.Action,
-		rule.SrcIPNot,
-		rule.SrcIP,
-		rule.DstIPNot,
-		rule.DstIP,
-		rule.SrcPortNot,
-		rule.SrcPorts,
-		rule.DstPortNot,
-		rule.DstPorts,
-		rule.Order,
-		rule.Protocols,
-		rule.IPProtocol,
-		rule.Description,
-	)
+	data := rule.RuleAsString()
 
 	r, err := http.NewRequest("PUT", fi.Client.Url.String()+url, io.Reader(strings.NewReader(data)))
 	if err != nil {
@@ -216,4 +184,24 @@ func GenerateUniqueDescription(base string) string {
 	// Generate a unique description by appending a UUID
 	// Rule IDs are not predictable, so we use UUIDs for uniqueness
 	return fmt.Sprintf("%s-bbcli-%s", base, uuid.New().String())
+}
+
+func (r *FirewallRule) RuleAsString() string {
+	return fmt.Sprintf(
+		"enable=%d&action=%s&srcipnot=%v&srcip=%v&dstipnot=%v&dstip=%v&srcportnot=%v&srcports=%v&dstportnot=%v&dstports=%v&order=%d&protocols=%v&ipprotocol=%v&description=%v",
+		r.Enable,
+		r.Action,
+		r.SrcIPNot,
+		r.SrcIP,
+		r.DstIPNot,
+		r.DstIP,
+		r.SrcPortNot,
+		r.SrcPorts,
+		r.DstPortNot,
+		r.DstPorts,
+		r.Order,
+		r.Protocols,
+		r.IPProtocol,
+		r.Description,
+	)
 }
