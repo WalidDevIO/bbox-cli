@@ -11,8 +11,7 @@ var (
 
 // Constants for special values
 const (
-	NotConcerned = "0"
-	Any          = ""
+	Any = ""
 )
 
 // EnableState represents whether a rule or feature is enabled
