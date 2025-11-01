@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"strings"
 	"time"
 )
@@ -55,7 +54,7 @@ func (ai *AuthInterface) StartTokenRefresher() error {
 
 func (ai *AuthInterface) BasicAuth(password string) error {
 	_, err := ai.Client.Post(
-		"/login", "application/x-www-form-urlencoded", io.Reader(strings.NewReader("password="+password)),
+		"/login", "application/x-www-form-urlencoded", strings.NewReader("password="+password),
 	)
 	if err != nil {
 		return err

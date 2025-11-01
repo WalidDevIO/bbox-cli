@@ -5,8 +5,6 @@ import (
 	"fmt"
 )
 
-type StringOrInt string
-
 func (s *StringOrInt) UnmarshalJSON(data []byte) error {
 	var v interface{}
 	if err := json.Unmarshal(data, &v); err != nil {

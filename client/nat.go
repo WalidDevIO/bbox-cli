@@ -3,35 +3,16 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 )
 
+// NatInterface provides methods to interact with NAT rules on the Bbox device.
 type NatInterface struct {
 	Client *BboxClient
 }
 
-type NatResponse struct {
-	Nat NatRules `json:"nat"`
-}
-
-type NatRules struct {
-	Enable EnableState `json:"enable"`
-	Rules  []NatRule   `json:"rules"`
-}
-
-type NatRule struct {
-	ID          int         `json:"id"`
-	Enable      EnableState `json:"enable"`
-	Description string      `json:"description"`
-	Protocol    Protocol    `json:"protocol"`
-	SrcIP       StringOrInt `json:"externalip"`
-	SrcPorts    StringOrInt `json:"externalport"`
-	TargetIP    StringOrInt `json:"internalip"`
-	TargetPorts StringOrInt `json:"internalport"`
-}
-
+// GetNatRules retrieves all NAT rules from the Bbox device.
 func (ni *NatInterface) GetNatRules() ([]NatRule, error) {
 	var result []NatResponse
 	r, err := ni.Client.Get("/nat/rules")
@@ -46,6 +27,7 @@ func (ni *NatInterface) GetNatRules() ([]NatRule, error) {
 	return result[0].Nat.Rules, nil
 }
 
+// GetNatRuleByID retrieves a specific NAT rule by its ID.
 func (ni *NatInterface) GetNatRuleByID(ruleID int) (NatRule, error) {
 	var result NatRule
 	r, err := ni.Client.Get("/nat/rules/" + string(rune(ruleID)))
@@ -60,10 +42,11 @@ func (ni *NatInterface) GetNatRuleByID(ruleID int) (NatRule, error) {
 	return result, nil
 }
 
+// changeNatRuleState enables or disables a NAT rule based on the provided state.
 func (ni *NatInterface) changeNatRuleState(ruleID string, enable EnableState) error {
 	path := "/nat/rules/" + ruleID
 	data := fmt.Sprintf("enable=%d", enable)
-	req, err := http.NewRequest("PUT", path, io.Reader(strings.NewReader(data)))
+	req, err := http.NewRequest("PUT", path, strings.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -72,10 +55,12 @@ func (ni *NatInterface) changeNatRuleState(ruleID string, enable EnableState) er
 	return err
 }
 
+// EnableNatRule enables a NAT rule by its ID.
 func (ni *NatInterface) EnableNatRule(ruleID string) error {
 	return ni.changeNatRuleState(ruleID, Enabled)
 }
 
+// DisableNatRule disables a NAT rule by its ID.
 func (ni *NatInterface) DisableNatRule(ruleID string) error {
 	return ni.changeNatRuleState(ruleID, Disabled)
 }

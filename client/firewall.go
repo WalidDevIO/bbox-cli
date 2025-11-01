@@ -4,77 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
+// FirewallInterface provides methods to manage firewall rules
 type FirewallInterface struct {
 	Client *BboxClient
 }
 
-const NotConcerned = "0"
-const Any = ""
-
-type EnableState int
-
-const (
-	Disabled EnableState = 0
-	Enabled  EnableState = 1
-)
-
-type Action string
-
-const (
-	ActionAllow Action = "Accept"
-	ActionDeny  Action = "Drop"
-)
-
-type Protocol string
-
-const (
-	ProtocolAny Protocol = "tcp,udp"
-	ProtocolTCP Protocol = "tcp"
-	ProtocolUDP Protocol = "udp"
-)
-
-type IPProtocol string
-
-const (
-	IPProtocolIPv4 IPProtocol = "IPv4"
-	IPProtocolIPv6 IPProtocol = "IPv6"
-	IPProtocolBoth IPProtocol = "IPv4+IPv6"
-)
-
-type FirewallRule struct {
-	ID          int         `json:"id"`
-	Description string      `json:"description"`
-	Enable      EnableState `json:"enable"`
-	Action      Action      `json:"action"`
-	SrcIPNot    EnableState `json:"srcipnot"`
-	SrcIP       StringOrInt `json:"srcip"`
-	DstIPNot    EnableState `json:"dstipnot"`
-	DstIP       StringOrInt `json:"dstip"`
-	SrcPortNot  EnableState `json:"srcportnot"`
-	SrcPorts    StringOrInt `json:"srcports"`
-	DstPortNot  EnableState `json:"dstportnot"`
-	DstPorts    StringOrInt `json:"dstports"`
-	Order       int         `json:"order"`
-	Protocols   Protocol    `json:"protocols"`
-	IPProtocol  IPProtocol  `json:"ipprotocol"`
-	Utilisation int         `json:"utilisation"`
-}
-
-type Firewall struct {
-	Rules []FirewallRule `json:"rules"`
-}
-
-type FirewallResponse struct {
-	Firewall Firewall `json:"firewall"`
-}
-
+// GetFirewallRules retrieves all firewall rules from the device
 func (fi *FirewallInterface) GetFirewallRules() ([]FirewallRule, error) {
 	resp, err := fi.Client.Get("/firewall/rules")
 	if err != nil {
@@ -94,6 +35,7 @@ func (fi *FirewallInterface) GetFirewallRules() ([]FirewallRule, error) {
 	return firewallResp[0].Firewall.Rules, nil
 }
 
+// DeleteFirewallRule removes a firewall rule by its ID
 func (fi *FirewallInterface) DeleteFirewallRule(ruleID string) error {
 	if fi.Client.Bearer == nil {
 		return errors.New("no bearer token available")
@@ -118,6 +60,7 @@ func (fi *FirewallInterface) DeleteFirewallRule(ruleID string) error {
 	return nil
 }
 
+// AddFirewallRule creates a new firewall rule
 func (fi *FirewallInterface) AddFirewallRule(rule FirewallRule) error {
 	if fi.Client.Bearer == nil {
 		return errors.New("no bearer token available")
@@ -127,7 +70,9 @@ func (fi *FirewallInterface) AddFirewallRule(rule FirewallRule) error {
 	data := rule.RuleAsString()
 
 	resp, err := fi.Client.Post(
-		url, "application/x-www-form-urlencoded", io.Reader(strings.NewReader(data)),
+		url,
+		"application/x-www-form-urlencoded",
+		strings.NewReader(data),
 	)
 	if err != nil {
 		return err
@@ -141,11 +86,13 @@ func (fi *FirewallInterface) AddFirewallRule(rule FirewallRule) error {
 	return nil
 }
 
+// UpdateFirewallRule modifies an existing firewall rule
 func (fi *FirewallInterface) UpdateFirewallRule(rule FirewallRule) error {
 	if fi.Client.Bearer == nil {
 		return errors.New("no bearer token available")
 	}
 
+	// Find the rule ID by description
 	rules, err := fi.GetFirewallRules()
 	if err != nil {
 		return err
@@ -159,13 +106,19 @@ func (fi *FirewallInterface) UpdateFirewallRule(rule FirewallRule) error {
 		}
 	}
 
-	url := fmt.Sprintf("/firewall/rules/%s?btoken=%s", ruleID, fi.Client.Bearer.Token)
+	// Prepare the update request
+	url := fmt.Sprintf("/firewall/rules/%s", ruleID)
 	data := rule.RuleAsString()
 
-	r, err := http.NewRequest("PUT", fi.Client.Url.String()+url, io.Reader(strings.NewReader(data)))
+	r, err := fi.Client.NewRequest("PUT", url, strings.NewReader(data))
 	if err != nil {
 		return err
 	}
+
+	// Add bearer token to query parameters
+	q := r.URL.Query()
+	q.Add("btoken", fi.Client.Bearer.Token)
+	r.URL.RawQuery = q.Encode()
 
 	resp, err := fi.Client.Do(r)
 	if err != nil {
@@ -180,12 +133,15 @@ func (fi *FirewallInterface) UpdateFirewallRule(rule FirewallRule) error {
 	return nil
 }
 
+// GenerateUniqueDescription creates a unique description for firewall rules
+// by appending a UUID to the base description. This ensures uniqueness since
+// rule IDs are not predictable.
 func GenerateUniqueDescription(base string) string {
-	// Generate a unique description by appending a UUID
-	// Rule IDs are not predictable, so we use UUIDs for uniqueness
 	return fmt.Sprintf("%s-bbcli-%s", base, uuid.New().String())
 }
 
+// RuleAsString converts the firewall rule to URL-encoded form data
+// for API requests
 func (r *FirewallRule) RuleAsString() string {
 	return fmt.Sprintf(
 		"enable=%d&action=%s&srcipnot=%v&srcip=%v&dstipnot=%v&dstip=%v&srcportnot=%v&srcports=%v&dstportnot=%v&dstports=%v&order=%d&protocols=%v&ipprotocol=%v&description=%v",

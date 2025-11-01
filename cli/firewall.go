@@ -34,6 +34,42 @@ func handleFirewall(client *bboxclient.BboxClient, args []string) {
 			return
 		}
 		deleteFirewallRule(client, args[1])
+	case "edit":
+		if len(args) < 2 {
+			PrintUsage()
+			return
+		}
+		ruleID, err := strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Printf("Error: invalid ID '%s'\n", args[1])
+			return
+		}
+
+		fw := client.Firewall()
+		rules, err := fw.GetFirewallRules()
+		if err != nil {
+			log.Fatalf("Error: %v", err)
+		}
+
+		var existingRule *bboxclient.FirewallRule
+		for i := range rules {
+			if rules[i].ID == ruleID {
+				existingRule = &rules[i]
+				break
+			}
+		}
+
+		if existingRule == nil {
+			fmt.Printf("Error: Rule with ID %d not found\n", ruleID)
+			return
+		}
+
+		err = updateFirewallRule(client, handleRuleEditing(*existingRule))
+		if err != nil {
+			fmt.Printf("Error updating firewall rule: %v\n", err)
+			return
+		}
+		fmt.Println("Firewall rule updated successfully")
 	default:
 		fmt.Printf("Unknown firewall action: %s\n", action)
 		PrintUsage()
@@ -152,6 +188,11 @@ func addFirewallRule(client *bboxclient.BboxClient, rule bboxclient.FirewallRule
 	fmt.Println("Firewall rule added successfully")
 }
 
+func updateFirewallRule(client *bboxclient.BboxClient, rule bboxclient.FirewallRule) error {
+	fw := client.Firewall()
+	return fw.UpdateFirewallRule(rule)
+}
+
 func handleRuleCreation() bboxclient.FirewallRule {
 	rule := bboxclient.FirewallRule{
 		IPProtocol: bboxclient.IPProtocolIPv4,
@@ -161,6 +202,21 @@ func handleRuleCreation() bboxclient.FirewallRule {
 	fmt.Println("Creating a new firewall rule.")
 
 	rule.Description = bboxclient.GenerateUniqueDescription(readInput("Enter Description: "))
+	rule.Action = bboxclient.Action(readInput("Enter Action (Accept/Drop): "))
+	rule.SrcIP, rule.SrcIPNot = parseIPOrPort(readInput("Enter Source IP (or leave blank for ANY): "))
+	rule.SrcPorts, rule.SrcPortNot = parseIPOrPort(readInput("Enter Source Ports (or leave blank for ANY): "))
+	rule.DstIP, rule.DstIPNot = parseIPOrPort(readInput("Enter Destination IP (or leave blank for ANY): "))
+	rule.DstPorts, rule.DstPortNot = parseIPOrPort(readInput("Enter Destination Ports (or leave blank for ANY): "))
+	rule.Protocols = parseProtocols(readInput("Enter Protocols (tcp/udp or leave blank for ANY): "))
+	rule.Enable = parseEnable(readInput("Enable rule? (y/n): "))
+	return rule
+}
+
+func handleRuleEditing(existingRule bboxclient.FirewallRule) bboxclient.FirewallRule {
+	rule := existingRule
+
+	fmt.Println("Editing an existing firewall rule.")
+
 	rule.Action = bboxclient.Action(readInput("Enter Action (Accept/Drop): "))
 	rule.SrcIP, rule.SrcIPNot = parseIPOrPort(readInput("Enter Source IP (or leave blank for ANY): "))
 	rule.SrcPorts, rule.SrcPortNot = parseIPOrPort(readInput("Enter Source Ports (or leave blank for ANY): "))

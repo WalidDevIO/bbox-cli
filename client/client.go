@@ -35,17 +35,21 @@ func (bc *BboxClient) GetCookies() []*http.Cookie {
 	return bc.Client.Jar.Cookies(bc.Url)
 }
 
+func (bc *BboxClient) NewRequest(method, path string, body io.Reader) (*http.Request, error) {
+	u := bc.Url.JoinPath(path)
+	return http.NewRequest(method, u.String(), body)
+}
+
 func (bc *BboxClient) Do(req *http.Request) (*http.Response, error) {
-	req.URL = bc.Url.JoinPath(req.URL.String())
 	return bc.Client.Do(req)
 }
 
 func (bc *BboxClient) Get(url string) (*http.Response, error) {
-	return bc.Client.Get(bc.Url.String() + url)
+	return bc.Client.Get(bc.Url.JoinPath(url).String())
 }
 
 func (bc *BboxClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
-	return bc.Client.Post(bc.Url.String()+url, contentType, body)
+	return bc.Client.Post(bc.Url.JoinPath(url).String(), contentType, body)
 }
 
 func (bc *BboxClient) Nat() *NatInterface {
